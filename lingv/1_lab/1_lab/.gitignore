@@ -1,0 +1,17 @@
+.vs/
+x64/
+Debug/
+Release/
+*.exe
+*.pdb
+*.ilk
+*.obj
+*.idb
+*.tlog/
+*.user
+*.suo
+*.log
+*.tmp
+*.cache
+Thumbs.db
+.vscode/
