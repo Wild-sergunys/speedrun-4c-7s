@@ -9,13 +9,13 @@
 
 std::string read_file(const std::string& path) {
   std::ifstream file(path);
-  std::string text;
+  std::string res;
   std::string line;
 
   while (std::getline(file, line))
-    text += line + "\n";
+    res += line + "\n";
 
-  return text;
+  return res;
 }
 
 std::string input_text() {
