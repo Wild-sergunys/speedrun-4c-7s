@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <cctype>
+#include <windows.h>
 
 int get_int() {
   std::string input;
@@ -197,4 +198,27 @@ bool save_res_to_file(const std::string& data) {
     std::cout << "Файл сохранён: " << file_path.string() << std::endl;
     return true;
   }
+}
+
+std::string utf8_to_cp1251(const std::string& utf8_str) {
+#ifdef _WIN32
+  if (utf8_str.empty()) return "";
+
+  int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8_str.c_str(), -1, nullptr, 0);
+  if (wlen == 0) return utf8_str;
+
+  std::wstring wstr(wlen, L'\0');
+  MultiByteToWideChar(CP_UTF8, 0, utf8_str.c_str(), -1, wstr.data(), wlen);
+
+  int len = WideCharToMultiByte(1251, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+  if (len == 0) return utf8_str;
+
+  std::string res(len, '\0');
+  WideCharToMultiByte(1251, 0, wstr.c_str(), -1, res.data(), len, nullptr, nullptr);
+
+  if (!res.empty() && res.back() == '\0') res.pop_back();
+  return res;
+#else
+  return utf8_str;
+#endif
 }

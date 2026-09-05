@@ -13,7 +13,7 @@ std::string read_file(const std::string& path) {
   std::string line;
 
   while (std::getline(file, line))
-    res += line + "\n";
+    res += utf8_to_cp1251(line) + "\n";
 
   return res;
 }
@@ -23,7 +23,7 @@ std::string input_text() {
   std::string res;
   std::string line;
 
-  while (true) {
+  for (;;) {
     std::getline(std::cin, line);
     if (line.empty()) break;
     res += line + "\n";
@@ -68,7 +68,7 @@ void run_tests() {
 
   std::vector<TestCase> tests;
   tests.push_back({ "hello world", 'l', "hello world" });
-  tests.push_back({ "apple banana", 'a', "apple banana" });
+  tests.push_back({ "йоу есс", 'x', "" });
   tests.push_back({ "test", 'x', "" });
   tests.push_back({ "", 'a', "" });
   tests.push_back({ "hello", 'h', "hello" });

@@ -9,7 +9,7 @@
 
 
 void print_purchase(const FuelPurchase& p, const FuelPurchase* prev) {
-  std::cout << std::fixed << std::setprecision(2); // fixed - обычный формат, не научный, 2 знака после запятой
+  std::cout << std::fixed << std::setprecision(2);
   std::cout << "Дата: " << p.date
     << " | Марка: " << p.brand
     << " | Одометр: " << p.odometer
@@ -50,7 +50,7 @@ void print_statistics(const Statistics& s, const std::string& label) {
     std::cout << "Средний расход (км/л): " << s.avg_km_per_liter << "\n";
     std::cout << "Средняя стоимость км: " << s.avg_cost_per_km << " руб." << "\n";
     std::cout << "Средняя стоимость галлона: " << s.avg_cost_per_gallon << " руб." << "\n";
-    if (s.total_days > 0 && s.count > 1) {
+    if (s.total_days > 0) {
       std::cout << "Средняя стоимость дня: " << s.avg_cost_per_day << " руб." << "\n";
       std::cout << "Среднее дней на галлон: " << s.avg_days_per_gallon << "\n";
     }
@@ -66,13 +66,12 @@ std::vector<FuelPurchase> parse_fuel_data(const std::vector<std::string>& lines,
     return res;
   }
 
-  std::locale c_locale("C"); // т.к. общая локаль ru
+  std::locale c_locale("C");
 
   for (size_t line_num = 0; line_num < lines.size(); ++line_num) {
     const std::string& line = lines[line_num];
     if (line.empty()) continue;
 
-    // Разбитие на поля 
     std::vector<std::string> tokens;
     std::string current_token;
     bool inside_quotes = false;
@@ -89,14 +88,12 @@ std::vector<FuelPurchase> parse_fuel_data(const std::vector<std::string>& lines,
     }
     tokens.push_back(trim(current_token));
 
-    // Проверка кол-ва полей
     if (tokens.size() != 6) {
       error = "Строка " + std::to_string(line_num + 1) +
         ": ожидается 6 полей, найдено " + std::to_string(tokens.size());
       return {};
     }
 
-    // Проверка пустых полей
     for (size_t i = 0; i < tokens.size(); ++i) {
       if (tokens[i].empty()) {
         error = "Строка " + std::to_string(line_num + 1) +
@@ -105,25 +102,22 @@ std::vector<FuelPurchase> parse_fuel_data(const std::vector<std::string>& lines,
       }
     }
 
-    // Проверка датф
     if (!is_valid_date(tokens[0])) {
       error = "Строка " + std::to_string(line_num + 1) +
         ": неверный формат даты (ожидается YYYY-MM-DD): " + tokens[0];
       return {};
     }
 
-    // Проверка марки
     if (tokens[1].empty()) {
       error = "Строка " + std::to_string(line_num + 1) + ": марка бензина не может быть пустой";
       return {};
     }
 
-    // Создаем структуру + парсим числа
     FuelPurchase p;
     p.date = tokens[0];
     p.brand = utf8_to_cp1251(tokens[1]);
 
-    std::string field_names[] = { "одометр", "цена/л", "литры", "стоимость" }; // для ошибок
+    std::string field_names[] = { "одометр", "цена/л", "литры", "стоимость" };
     double* field_ptr[] = { &p.odometer, &p.price_per_liter, &p.liters, &p.total_cost };
 
     for (int i = 0; i < 4; ++i) {
@@ -132,7 +126,7 @@ std::vector<FuelPurchase> parse_fuel_data(const std::vector<std::string>& lines,
       num_ss.imbue(c_locale);
 
       double val;
-      char leftover; // что после числа
+      char leftover;
 
       if (!(num_ss >> val)) {
         error = "Строка " + std::to_string(line_num + 1) +
@@ -149,13 +143,11 @@ std::vector<FuelPurchase> parse_fuel_data(const std::vector<std::string>& lines,
       *field_ptr[i] = val;
     }
 
-    // Проверка на отрицательные
     if (p.odometer < 0 || p.price_per_liter < 0 || p.liters < 0 || p.total_cost < 0) {
       error = "Строка " + std::to_string(line_num + 1) + ": отрицательные значения не допускаются";
       return {};
     }
 
-    // Проверяем логику
     double calculated_cost = p.price_per_liter * p.liters;
     if (std::abs(calculated_cost - p.total_cost) > 0.01) {
       error = "Строка " + std::to_string(line_num + 1) +
@@ -170,7 +162,6 @@ std::vector<FuelPurchase> parse_fuel_data(const std::vector<std::string>& lines,
     res.push_back(p);
   }
 
-  // Проверка логики датф и одометра (должны расти)
   for (size_t i = 1; i < res.size(); ++i) {
     int days = days_between(res[i - 1].date, res[i].date);
     if (days < 0) {
@@ -203,43 +194,90 @@ Statistics compute_statistics(const std::vector<FuelPurchase>& data) {
       double km = p.odometer - data[i - 1].odometer;
       if (km > 0) {
         s.total_km += km;
-        if (p.liters > 0)
-          s.avg_km_per_liter += km / p.liters;
-        s.avg_cost_per_km += p.total_cost / km;
       }
 
       double days = days_between(data[i - 1].date, p.date);
-      s.total_days += days;
-
-      if (days > 0)
-        s.avg_cost_per_day += p.total_cost / days;
-
-      double gallons = p.liters / GALLON_TO_LITER;
-      if (gallons > 0 && days > 0)
-        s.avg_days_per_gallon += days / gallons;
+      if (days >= 0) {
+        s.total_days += days;
+      }
     }
   }
 
-  int n = s.count - 1;
-  if (n > 0) {
-    s.avg_km_per_liter /= n;
-    s.avg_cost_per_km /= n;
-    s.avg_cost_per_day /= n;
-    s.avg_days_per_gallon /= n;
+  if (s.total_liters > 0)
+    s.avg_km_per_liter = s.total_km / s.total_liters;
+
+  if (s.total_km > 0)
+    s.avg_cost_per_km = s.total_cost / s.total_km;
+
+  if (s.total_days > 0)
+    s.avg_cost_per_day = s.total_cost / s.total_days;
+
+  if (s.count > 0 && s.total_liters > 0) {
+    double total_gallon_cost = 0;
+    for (const auto& p : data) {
+      total_gallon_cost += p.price_per_liter * GALLON_TO_LITER;
+    }
+    s.avg_cost_per_gallon = total_gallon_cost / s.count;
   }
-  s.avg_cost_per_gallon = (s.total_liters > 0) ? (s.total_cost / (s.total_liters / GALLON_TO_LITER)) : 0;
+
+  if (s.count > 1 && s.total_liters > 0 && s.total_days > 0) {
+    s.avg_days_per_gallon = s.total_days / (s.total_liters / GALLON_TO_LITER);
+  }
 
   return s;
 }
 
 std::map<std::string, Statistics> compute_brand_statistics(const std::vector<FuelPurchase>& data) {
-  std::map<std::string, std::vector<FuelPurchase>> brand_data;
-  for (const auto& p : data)
-    brand_data[p.brand].push_back(p);
-
   std::map<std::string, Statistics> res;
-  for (const auto& [brand, purchases] : brand_data)
-    res[brand] = compute_statistics(purchases);
+  if (data.empty()) return res;
+
+  for (size_t i = 0; i < data.size(); ++i) {
+    const auto& current = data[i];
+    auto& stats = res[current.brand];
+
+    stats.count++;
+    stats.total_cost += current.total_cost;
+    stats.total_liters += current.liters;
+
+    if (i > 0) {
+      const auto& prev = data[i - 1];
+      double km = current.odometer - prev.odometer;
+      if (km > 0) {
+        stats.total_km += km;
+      }
+
+      double days = days_between(prev.date, current.date);
+      if (days >= 0) {
+        stats.total_days += days;
+      }
+    }
+  }
+
+  for (auto& [brand, stats] : res) {
+    if (stats.total_liters > 0)
+      stats.avg_km_per_liter = stats.total_km / stats.total_liters;
+
+    if (stats.total_km > 0)
+      stats.avg_cost_per_km = stats.total_cost / stats.total_km;
+
+    if (stats.total_days > 0)
+      stats.avg_cost_per_day = stats.total_cost / stats.total_days;
+
+    if (stats.count > 0) {
+      double total_gallon_cost = 0;
+      for (const auto& p : data) {
+        if (p.brand == brand) {
+          total_gallon_cost += p.price_per_liter * GALLON_TO_LITER;
+        }
+      }
+      stats.avg_cost_per_gallon = total_gallon_cost / stats.count;
+    }
+
+    if (stats.total_days > 0 && stats.total_liters > 0) {
+      stats.avg_days_per_gallon = stats.total_days / (stats.total_liters / GALLON_TO_LITER);
+    }
+  }
+
   return res;
 }
 
