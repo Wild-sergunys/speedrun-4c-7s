@@ -133,6 +133,16 @@ std::string get_date_from_user() {
 
 bool save_res_to_file(const std::string& data) {
   namespace fs = std::filesystem;
+
+  const std::string INVALID_CHARS = "\\/:*?\"<>|";
+  const std::vector<std::string> RESERVED_NAMES = {
+      "CON", "PRN", "AUX", "NUL",
+      "COM1", "COM2", "COM3", "COM4", "COM5",
+      "COM6", "COM7", "COM8", "COM9",
+      "LPT1", "LPT2", "LPT3", "LPT4", "LPT5",
+      "LPT6", "LPT7", "LPT8", "LPT9"
+  };
+
   std::string path;
   for (;;) {
     std::cout << "Введите путь для сохранения: ";
@@ -145,6 +155,41 @@ bool save_res_to_file(const std::string& data) {
     fs::path file_path(path);
     if (!file_path.is_absolute())
       file_path = fs::current_path() / file_path;
+
+    std::string filename = file_path.filename().string();
+
+    bool has_invalid = false;
+    for (char c : filename)
+      if (INVALID_CHARS.find(c) != std::string::npos) {
+        has_invalid = true;
+        break;
+      }
+    
+
+    if (has_invalid) {
+      std::cout << "Ошибка: имя файла содержит запрещённые символы (\\/:*?\"<>|).\n";
+      continue;
+    }
+
+    std::string name = filename;
+    size_t dot_pos = name.find('.');
+    if (dot_pos != std::string::npos)
+      name = name.substr(0, dot_pos);
+    for (char& c : name)
+      c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+
+    bool is_reserved = false;
+    for (const std::string& res : RESERVED_NAMES)
+      if (name == res) {
+        is_reserved = true;
+        break;
+      }
+
+    if (is_reserved) {
+      std::cout << "Ошибка: имя файла зарезервировано для Windows.\n";
+      continue;
+    }
+
     if (fs::exists(file_path)) {
       std::cout << "Файл уже существует. Перезаписать его?";
       if (!get_yes_no()) {
@@ -175,9 +220,8 @@ std::vector<std::string> split(const std::string& s, char delimiter) {
   std::vector<std::string> tokens;
   std::string token;
   std::istringstream tokenStream(s);
-  while (std::getline(tokenStream, token, delimiter)) {
+  while (std::getline(tokenStream, token, delimiter))
     tokens.push_back(trim(token));
-  }
   return tokens;
 }
 
