@@ -8,7 +8,7 @@
 #include "interface.h"
 
 class NameTable {
-  std::map<std::string, Command *> commands;
+  std::map<std::string, Command *> commands; 
   std::map<std::string, float>     variables;
 public:
   ~NameTable();

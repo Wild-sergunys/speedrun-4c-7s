@@ -7,14 +7,14 @@
 
 // “ипы лексем, используемых калькул€тором
 enum  LexemType {
-  LT_Unknown,
-  LT_Number, 
-  LT_End,
-  LT_Delimiter,
-  LT_Identifier,
-  LT_Label,
-  LT_String,
-  LT_EOL,
+  LT_Unknown,        // тип ещЄ не определЄн
+  LT_Number,         // число
+  LT_End,            // конец входного файла
+  LT_Delimiter,      // знак: + - * / ( ) ; = < >
+  LT_Identifier,     // им€: LET, PRINT, A, I
+  LT_Label,          // метка
+  LT_String,         // строка в кавычках
+  LT_EOL,            // конец строки
 };
 
 // —труктура лексемы
@@ -32,26 +32,26 @@ class Parser {
   // при неправильном использовании объектов класса Parser.
   // ќбъ€вл€€ их в закрытой части класса Parser € подавл€ю возможность
   // автоматической генерации таких методов.
-  Parser(const Parser&);
-  Parser& operator = (const Parser&);
+  Parser(const Parser&);              // копирование запрещено
+  Parser& operator = (const Parser&); // присваивание запрещено
 public:
-  class Holder {
-    std::istream::pos_type  pos;
-    unsigned int            line_number;
-    friend class Parser;
+  class Holder {                      // снапшот позиции в файле
+    std::istream::pos_type  pos;      // смещение в потоке
+    unsigned int            line_number; // номер строки на этот момент
+    friend class Parser;              // Parser может читать эти пол€
   };
-  std::istream& in;
-  Lexem         last;
-  int           line_number;
-public:  
-  Parser(std::istream& str);
-  Lexem get_lexem();            // считать следующую лексему
-  Lexem get_last();             // вернуть предыдущую лексему
+  std::istream& in;                   // входной поток со скриптом
+  Lexem         last;                 // последн€€ прочитанна€ лексема
+  int           line_number;          // текущий номер строки
+public:
+  Parser(std::istream& str);          // прив€зать парсер к потоку
+  Lexem get_lexem();                  // прочитать следующую лексему
+  Lexem get_last();                   // вернуть уже прочитанную лексему
 
-  bool  SkipUntilEOL();
+  bool  SkipUntilEOL();               // пропустить всЄ до конца строки
 
-  Holder  Hold() const;
-  void    Fetch(Holder);
-  void    Reset();
+  Holder  Hold() const;               // запомнить текущую позицию
+  void    Fetch(Holder);              // вернутьс€ к сохранЄнной позиции
+  void    Reset();                    // перемотать поток в начало
 };
 
