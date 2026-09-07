@@ -45,6 +45,9 @@ int main() {
     switch (choice) {
     case FILE_PARSING: {
       std::string file_path = get_file_path_txt();
+
+      if (file_path.empty()) break;
+
       std::string text = read_file(file_path);
 
       if (text.empty()) {

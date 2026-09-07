@@ -20,11 +20,17 @@ std::string read_file(const std::string& path) {
 
 std::string input_text() {
   std::cout << "Введите текст (для завершения ввода введите пустую строку):\n";
+  std::cout << "Для отмены введите Ctrl+Z\n";
   std::string res;
   std::string line;
 
   for (;;) {
-    std::getline(std::cin, line);
+    if (!std::getline(std::cin, line)) {
+      std::cin.clear();
+      std::cout << "\nВвод отменен. Возврат в главное меню.\n";
+      return res;
+    }
+
     if (line.empty()) break;
     res += line + "\n";
   }

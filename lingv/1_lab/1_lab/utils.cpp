@@ -44,6 +44,12 @@ bool get_yes_no() {
     std::cout << " (y/n): ";
     std::getline(std::cin, input);
 
+    if (!std::cin) {
+      std::cin.clear();
+      std::cout << "\nВвод отменен. Ответ 'нет'.\n";
+      return false;
+    }
+
     if (input.length() == 1) {
       char ch = input[0];
       if (ch == 'y' || ch == 'Y') return true;
@@ -60,8 +66,19 @@ std::string get_file_path_txt() {
   std::string res;
 
   for (;;) {
-    std::cout << "Введите путь к файлу: ";
+    std::cout << "Введите путь к файлу (для отмены введите 'exit'): ";
     std::getline(std::cin, res);
+
+    if (res == "exit" || res == "выход" || res == "EXIT" || res == "ВЫХОД") {
+      std::cout << "Выбор файла отменен. Возврат в главное меню.\n";
+      return "";
+    }
+
+    if (!std::cin) {
+      std::cin.clear();
+      std::cout << "\nВвод отменен. Возврат в главное меню.\n";
+      return "";
+    }
 
     size_t start = res.find_first_not_of(" \t\n\r\f\v");
     if (start == std::string::npos) {
@@ -120,8 +137,20 @@ bool save_res_to_file(const std::string& data) {
   std::string path;
 
   for (;;) {
-    std::cout << "Введите путь для сохранения (только имя файла или полный путь): ";
+    std::cout << "Введите путь для сохранения (только имя файла или полный путь):\n";
+    std::cout << "Для отмены введите 'exit' или 'выход': ";
     std::getline(std::cin, path);
+
+    if (path == "exit" || path == "выход" || path == "EXIT" || path == "ВЫХОД") {
+      std::cout << "Сохранение отменено.\n";
+      return false;
+    }
+
+    if (!std::cin) {
+      std::cin.clear();
+      std::cout << "\nВвод отменен. Сохранение не выполнено.\n";
+      return false;
+    }
 
     size_t start = path.find_first_not_of(" \t\n\r\f\v");
     if (start == std::string::npos) {
@@ -138,12 +167,11 @@ bool save_res_to_file(const std::string& data) {
     std::string filename = file_path.filename().string();
 
     bool has_invalid = false;
-    for (char c : filename) {
+    for (char c : filename)
       if (INVALID_CHARS.find(c) != std::string::npos) {
         has_invalid = true;
         break;
       }
-    }
 
     if (has_invalid) {
       std::cout << "Ошибка: имя файла содержит запрещённые символы (\\/:*?\"<>|).\n";
@@ -159,11 +187,10 @@ bool save_res_to_file(const std::string& data) {
 
     bool is_reserved = false;
     for (const std::string& res : RESERVED_NAMES) {
-      if (name == res) {
+      if (name == res)
         is_reserved = true;
         break;
       }
-    }
 
     if (is_reserved) {
       std::cout << "Ошибка: имя файла зарезервировано для Windows.\n";
@@ -184,7 +211,6 @@ bool save_res_to_file(const std::string& data) {
       continue;
     }
     test.close();
-    fs::remove(file_path);
 
     std::ofstream file(file_path);
     if (!file.is_open()) {
