@@ -28,9 +28,14 @@ std::vector<std::string> read_file_lines(const std::string& path) {
 
 void run_analysis() {
   std::cout << "\n---- Анализ покупок бензина ----\n"
-            << "Загрузите файл с данными (CSV).\n";
+    << "Загрузите файл с данными (CSV).\n";
 
   std::string path = get_file_path_txt();
+  if (path.empty()) {
+    std::cout << "Ввод отменён. Возврат в меню.\n";
+    return;
+  }
+
   auto lines = read_file_lines(path);
 
   if (lines.empty()) {
@@ -68,18 +73,26 @@ void run_analysis() {
   if (get_yes_no()) {
     std::cout << "Введите дату начала (YYYY-MM-DD): ";
     std::string start_date = get_date_from_user();
+    if (start_date.empty()) {
+      std::cout << "Ввод отменён.\n";
+      return;
+    }
 
     std::string end_date;
     for (;;) {
       std::cout << "Введите дату конца (YYYY-MM-DD): ";
       end_date = get_date_from_user();
+      if (end_date.empty()) {
+        std::cout << "Ввод отменён.\n";
+        return;
+      }
       if (end_date >= start_date) break;
       else std::cout << "Ошибка: дата конца должна быть >= даты начала.\n";
     }
 
     std::vector<FuelPurchase> period_data;
-    for (const auto& p : data) 
-      if (p.date >= start_date && p.date <= end_date) 
+    for (const auto& p : data)
+      if (p.date >= start_date && p.date <= end_date)
         period_data.push_back(p);
 
     if (period_data.empty())
@@ -103,6 +116,8 @@ void run_analysis() {
     ss << "Средняя стоимость галлона: " << total_stats.avg_cost_per_gallon << " руб.\n";
     ss << "Средняя стоимость дня: " << total_stats.avg_cost_per_day << " руб.\n";
     ss << "Среднее дней на галлон: " << total_stats.avg_days_per_gallon << "\n";
-    save_res_to_file(ss.str());
+    if (!save_res_to_file(ss.str())) {
+      std::cout << "Сохранение отменено.\n";
+    }
   }
 }

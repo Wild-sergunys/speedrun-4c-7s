@@ -192,14 +192,12 @@ Statistics compute_statistics(const std::vector<FuelPurchase>& data) {
 
     if (i > 0) {
       double km = p.odometer - data[i - 1].odometer;
-      if (km > 0) {
+      if (km > 0)
         s.total_km += km;
-      }
 
       double days = days_between(data[i - 1].date, p.date);
-      if (days >= 0) {
+      if (days >= 0)
         s.total_days += days;
-      }
     }
   }
 
@@ -212,17 +210,11 @@ Statistics compute_statistics(const std::vector<FuelPurchase>& data) {
   if (s.total_days > 0)
     s.avg_cost_per_day = s.total_cost / s.total_days;
 
-  if (s.count > 0 && s.total_liters > 0) {
-    double total_gallon_cost = 0;
-    for (const auto& p : data) {
-      total_gallon_cost += p.price_per_liter * GALLON_TO_LITER;
-    }
-    s.avg_cost_per_gallon = total_gallon_cost / s.count;
-  }
+  if (s.total_liters > 0)
+    s.avg_cost_per_gallon = s.total_cost / (s.total_liters / GALLON_TO_LITER);
 
-  if (s.count > 1 && s.total_liters > 0 && s.total_days > 0) {
+  if (s.count > 1 && s.total_liters > 0 && s.total_days > 0)
     s.avg_days_per_gallon = s.total_days / (s.total_liters / GALLON_TO_LITER);
-  }
 
   return s;
 }
@@ -230,6 +222,14 @@ Statistics compute_statistics(const std::vector<FuelPurchase>& data) {
 std::map<std::string, Statistics> compute_brand_statistics(const std::vector<FuelPurchase>& data) {
   std::map<std::string, Statistics> res;
   if (data.empty()) return res;
+
+  for (const auto& p : data) {
+    res[p.brand].count = 0;
+    res[p.brand].total_cost = 0.0;
+    res[p.brand].total_liters = 0.0;
+    res[p.brand].total_km = 0.0;
+    res[p.brand].total_days = 0.0;
+  }
 
   for (size_t i = 0; i < data.size(); ++i) {
     const auto& current = data[i];
@@ -241,14 +241,16 @@ std::map<std::string, Statistics> compute_brand_statistics(const std::vector<Fue
 
     if (i > 0) {
       const auto& prev = data[i - 1];
+      auto& prev_stats = res[prev.brand];
+
       double km = current.odometer - prev.odometer;
       if (km > 0) {
-        stats.total_km += km;
+        prev_stats.total_km += km;
       }
 
       double days = days_between(prev.date, current.date);
       if (days >= 0) {
-        stats.total_days += days;
+        prev_stats.total_days += days;
       }
     }
   }
@@ -263,15 +265,8 @@ std::map<std::string, Statistics> compute_brand_statistics(const std::vector<Fue
     if (stats.total_days > 0)
       stats.avg_cost_per_day = stats.total_cost / stats.total_days;
 
-    if (stats.count > 0) {
-      double total_gallon_cost = 0;
-      for (const auto& p : data) {
-        if (p.brand == brand) {
-          total_gallon_cost += p.price_per_liter * GALLON_TO_LITER;
-        }
-      }
-      stats.avg_cost_per_gallon = total_gallon_cost / stats.count;
-    }
+    if (stats.total_liters > 0)
+      stats.avg_cost_per_gallon = stats.total_cost / (stats.total_liters / GALLON_TO_LITER);
 
     if (stats.total_days > 0 && stats.total_liters > 0) {
       stats.avg_days_per_gallon = stats.total_days / (stats.total_liters / GALLON_TO_LITER);
@@ -280,6 +275,7 @@ std::map<std::string, Statistics> compute_brand_statistics(const std::vector<Fue
 
   return res;
 }
+
 
 Statistics compute_period_statistics(const std::vector<FuelPurchase>& data, int start_idx, int end_idx) {
   if (start_idx < 0 || end_idx >= static_cast<int>(data.size()) || start_idx > end_idx)

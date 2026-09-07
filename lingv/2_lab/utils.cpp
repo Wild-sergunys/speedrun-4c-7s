@@ -25,7 +25,11 @@ int get_int() {
   int res = 0;
 
   for (;;) {
-    std::getline(std::cin, input);
+    if (!std::getline(std::cin, input)) {
+      std::cin.clear();
+      std::cout << "Ошибка: конец ввода. Попробуйте снова: ";
+      continue;
+    }
 
     if (input.empty()) {
       std::cout << "Ошибка: строка пуста. Попробуйте снова: ";
@@ -35,7 +39,6 @@ int get_int() {
     try {
       size_t pos = 0;
       res = std::stoi(input, &pos);
-
       if (pos == input.length()) return res;
       else std::cout << "Ошибка: введены лишние символы. Попробуйте снова: ";
     }
@@ -51,12 +54,19 @@ int get_int() {
 double get_double() {
   std::string input;
   double res = 0.0;
+
   for (;;) {
-    std::getline(std::cin, input);
+    if (!std::getline(std::cin, input)) {
+      std::cin.clear();
+      std::cout << "Ошибка: конец ввода. Попробуйте снова: ";
+      continue;
+    }
+
     if (input.empty()) {
       std::cout << "Ошибка: строка пуста. Попробуйте снова: ";
       continue;
     }
+
     try {
       size_t pos = 0;
       res = std::stod(input, &pos);
@@ -71,14 +81,21 @@ double get_double() {
 
 bool get_yes_no() {
   std::string input;
+
   for (;;) {
     std::cout << " (y/n): ";
-    std::getline(std::cin, input);
+    if (!std::getline(std::cin, input)) {
+      std::cin.clear();
+      std::cout << "Ошибка: конец ввода. Попробуйте снова: ";
+      continue;
+    }
+
     if (input.length() == 1) {
       char ch = input[0];
       if (ch == 'y' || ch == 'Y') return true;
       if (ch == 'n' || ch == 'N') return false;
     }
+
     std::cout << "Ошибка: введите y или n.\n";
   }
 }
@@ -86,46 +103,78 @@ bool get_yes_no() {
 std::string get_file_path_txt() {
   namespace fs = std::filesystem;
   std::string res;
+
   for (;;) {
-    std::cout << "Введите путь к файлу: ";
-    std::getline(std::cin, res);
+    std::cout << "Введите путь к файлу (или 'exit' для отмены): ";
+    if (!std::getline(std::cin, res)) {
+      std::cin.clear();
+      std::cout << "Отмена ввода.\n";
+      return "";
+    }
+
     res = trim(res);
+
+    if (res == "exit" || res == "выход") {
+      std::cout << "Отмена ввода.\n";
+      return "";
+    }
+
     if (res.empty()) {
       std::cout << "Ошибка: путь не может быть пустым.\n";
       continue;
     }
+
     fs::path file_path(res);
     if (!file_path.is_absolute())
       file_path = fs::current_path() / file_path;
+
     std::string ext = file_path.extension().string();
-    for (char& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c))); // uc, т.к. tolower ожидает от 0..255
+    for (char& c : ext)
+      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+
     if (ext != ".txt") {
       std::cout << "Ошибка: файл должен иметь расширение .txt.\n";
       continue;
     }
+
     if (!fs::exists(file_path)) {
       std::cout << "Ошибка: файл не найден.\n";
       continue;
     }
+
     if (!fs::is_regular_file(file_path)) {
       std::cout << "Ошибка: это не файл, а папка.\n";
       continue;
     }
+
     std::ifstream test(file_path);
     if (!test.is_open()) {
       std::cout << "Ошибка: файл не открывается для чтения.\n";
       continue;
     }
     test.close();
+
     return file_path.string();
   }
 }
 
 std::string get_date_from_user() {
   std::string date;
+
   for (;;) {
-    std::getline(std::cin, date);
+    if (!std::getline(std::cin, date)) {
+      std::cin.clear();
+      std::cout << "Отмена ввода.\n";
+      return "";
+    }
+
     date = trim(date);
+
+    if (date == "exit" || date == "выход") {
+      std::cout << "Отмена ввода.\n";
+      return "";
+    }
+
     if (is_valid_date(date)) return date;
     else std::cout << "Ошибка: неверный формат даты. Используйте YYYY-MM-DD.\n";
   }
@@ -145,13 +194,26 @@ bool save_res_to_file(const std::string& data) {
 
   std::string path;
   for (;;) {
-    std::cout << "Введите путь для сохранения: ";
-    std::getline(std::cin, path);
+    std::cout << "Введите путь для сохранения (или 'exit' для отмены): ";
+
+    if (!std::getline(std::cin, path)) {
+      std::cin.clear();
+      std::cout << "Сохранение отменено.\n";
+      return false;
+    }
+
     path = trim(path);
+
+    if (path == "exit" || path == "выход") {
+      std::cout << "Сохранение отменено.\n";
+      return false;
+    }
+
     if (path.empty()) {
       std::cout << "Ошибка: путь не может быть пустым.\n";
       continue;
     }
+
     fs::path file_path(path);
     if (!file_path.is_absolute())
       file_path = fs::current_path() / file_path;
@@ -159,12 +221,12 @@ bool save_res_to_file(const std::string& data) {
     std::string filename = file_path.filename().string();
 
     bool has_invalid = false;
-    for (char c : filename)
+    for (char c : filename) {
       if (INVALID_CHARS.find(c) != std::string::npos) {
         has_invalid = true;
         break;
       }
-    
+    }
 
     if (has_invalid) {
       std::cout << "Ошибка: имя файла содержит запрещённые символы (\\/:*?\"<>|).\n";
@@ -179,11 +241,12 @@ bool save_res_to_file(const std::string& data) {
       c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
 
     bool is_reserved = false;
-    for (const std::string& res : RESERVED_NAMES)
+    for (const std::string& res : RESERVED_NAMES) {
       if (name == res) {
         is_reserved = true;
         break;
       }
+    }
 
     if (is_reserved) {
       std::cout << "Ошибка: имя файла зарезервировано для Windows.\n";
@@ -197,11 +260,13 @@ bool save_res_to_file(const std::string& data) {
         continue;
       }
     }
+
     std::ofstream file(file_path);
     if (!file.is_open()) {
       std::cout << "Ошибка: не удалось создать файл.\n";
       continue;
     }
+
     file << data;
     file.close();
     std::cout << "Файл сохранён: " << file_path.string() << std::endl;
