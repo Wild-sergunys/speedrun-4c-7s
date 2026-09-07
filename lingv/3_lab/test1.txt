@@ -1,0 +1,7 @@
+LET A=1.01
+FOR I=1 TO 10
+  PRINT I
+  LET A=A*A
+NEXT
+
+PRINT A

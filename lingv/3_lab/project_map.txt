@@ -1,0 +1,57 @@
+Файлы:
+calculator.cpp/h
+commands.cpp/h
+executor.cpp/h +
+interface.h
+label_table.cpp/h
+lexical_analizer.cpp/h
+name_table.cpp/h
+Script.cpp
+stdafx.cpp/h +
+
+
+[1] - Script.cpp (точка входа)
+        1.1) Читает имя файла из командной строки (argv[1]); !!! что такое  argv[1]?
+        1.2) Открывает файл;
+        1.3) Запускает execute_script().
+[2] - executor.cpp (виртуальная машина) !!! почему виртуальная машина?
+        2.1) Регистрирует команды (register_commands);
+        2.2) Сканирует метки GOTO (scan_for_lables);
+        2.3) Запускает цикл: while (execute_command(parser));
+        2.4) Выполняет команды одну за другой.
+[3] - commands.cpp (команды языка)
+        3.1) LET - присваивание;
+        3.2) PRINT - вывод;
+        3.3) INPUT - ввод;
+        3.4) FOR / NEXT - цикл;
+        3.5) GOTO - переход по метке;
+        3.6) IF - условие;
+        3.7) Все команды используют evaluate_expression() для вычислений.
+[4] - calulator (парсер выражений)
+        4.1) prim() - числа, переменные, выражения в скобках;
+        4.2) term() - умножение и деление;
+        4.3) plus_minus() - сложение и вычитание;
+        4.4) evaluate_expression() - сравнения и вызов всего этого
+[5] - lexical_analizer.cpp (разборщик лексем)
+        5.1) get_lexem() - читает символы и превращает их в токены: числа, строки, идентификаторы, операторы.
+[6] - name_table.cpp + label_table.cpp (таблицы)
+        6.1) NameTable - хранит переменные (A, B, C) и команды;
+        6.2) LableTable - хранит метки для GOTO ()/
+	
+	
+
+
+
+
+BUG FIX:
+stdafx.cpp: 
+1) Перекидываем все инклюды в stdafx.h, .cpp инклюдит только хедер для прекомпиляции (в целом легаси практика)
+stdafx.h:
+2) Инклюды из stdafx.cpp закидываем сюда
+
+Script.cpp:
+	- нужно инклюдить <iostream> (11)
+calculator.cpp:
+	- нужно инклюдить <string> (14)
+executor.cpp:
+	- нужно инклюдить <iostream> (12)
